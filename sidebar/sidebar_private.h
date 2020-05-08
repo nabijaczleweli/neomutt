@@ -25,8 +25,9 @@
 
 #include <stdbool.h>
 #include "gui/lib.h"
+#include "mutt/lib.h"
 
-struct NotifyCallback;
+struct Mailbox;
 
 extern struct ListHead SidebarWhitelist;
 
