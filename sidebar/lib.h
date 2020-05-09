@@ -28,6 +28,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "mutt/lib.h"
+#include "gui/lib.h"
 #include "mutt_commands.h"
 
 struct Mailbox;
@@ -52,16 +53,14 @@ extern short C_SidebarWidth;
 void sb_init    (void);
 void sb_shutdown(void);
 
-void            sb_change_mailbox  (int op);
-bool            select_next        (void);
-void            sb_draw            (struct MuttWindow *win);
-struct Mailbox *sb_get_highlight   (void);
-void            sb_notify_mailbox  (struct Mailbox *m, bool created);
-void            sb_set_open_mailbox(struct Mailbox *m);
-void            sb_win_init        (struct MuttWindow *dlg);
-void            sb_win_shutdown    (struct MuttWindow *dlg);
+void            sb_change_mailbox(struct MuttWindow *win, int op);
+struct Mailbox *sb_get_highlight (struct MuttWindow *win);
 
 enum CommandResult sb_parse_unwhitelist(struct Buffer *buf, struct Buffer *s, intptr_t data, struct Buffer *err);
 enum CommandResult sb_parse_whitelist  (struct Buffer *buf, struct Buffer *s, intptr_t data, struct Buffer *err);
+
+void sb_notify_mailbox  (struct MuttWindow *win, struct Mailbox *m, bool created);
+void sb_draw            (struct MuttWindow *win);
+void sb_set_open_mailbox(struct MuttWindow *win, struct Mailbox *m);
 
 #endif /* MUTT_SIDEBAR_LIB_H */

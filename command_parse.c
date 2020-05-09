@@ -940,7 +940,10 @@ enum CommandResult parse_mailboxes(struct Buffer *buf, struct Buffer *s,
         if (m_old->flags == MB_HIDDEN)
         {
           m_old->flags = MB_NORMAL;
-          sb_notify_mailbox(m_old, true);
+          struct MuttWindow *dlg = TAILQ_LAST(&MuttDialogWindow->children, MuttWindowList);
+          struct MuttWindow *win_sidebar = mutt_window_find(dlg, WT_SIDEBAR);
+          if (win_sidebar)
+            sb_notify_mailbox(win_sidebar, m_old, true);
         }
         mailbox_free(&m);
         continue;
@@ -966,7 +969,10 @@ enum CommandResult parse_mailboxes(struct Buffer *buf, struct Buffer *s,
     }
 
 #ifdef USE_SIDEBAR
-    sb_notify_mailbox(m, true);
+    struct MuttWindow *dlg = TAILQ_LAST(&MuttDialogWindow->children, MuttWindowList);
+    struct MuttWindow *win_sidebar = mutt_window_find(dlg, WT_SIDEBAR);
+    if (win_sidebar)
+      sb_notify_mailbox(win_sidebar, m, true);
 #endif
 #ifdef USE_INOTIFY
     mutt_monitor_add(m);
@@ -1926,7 +1932,10 @@ enum CommandResult parse_unmailboxes(struct Buffer *buf, struct Buffer *s,
       }
 
 #ifdef USE_SIDEBAR
-      sb_notify_mailbox(np->mailbox, false);
+      struct MuttWindow *dlg = TAILQ_LAST(&MuttDialogWindow->children, MuttWindowList);
+      struct MuttWindow *win_sidebar = mutt_window_find(dlg, WT_SIDEBAR);
+      if (win_sidebar)
+        sb_notify_mailbox(win_sidebar, np->mailbox, false);
 #endif
 #ifdef USE_INOTIFY
       mutt_monitor_remove(np->mailbox);

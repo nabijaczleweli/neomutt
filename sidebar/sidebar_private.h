@@ -24,20 +24,11 @@
 #define MUTT_SIDEBAR_SIDEBAR_PRIVATE_H
 
 #include <stdbool.h>
+#include "gui/lib.h"
 
-struct MuttWindow;
 struct NotifyCallback;
 
 extern struct ListHead SidebarWhitelist;
-
-extern int EntryCount;
-extern int EntryLen;
-extern struct SbEntry **Entries;
-
-extern int TopIndex;
-extern int OpnIndex;
-extern int HilIndex;
-extern int BotIndex;
 
 /**
  * struct SbEntry - Info about folders in the sidebar
@@ -47,6 +38,7 @@ struct SbEntry
   char box[256];           ///< Formatted Mailbox name
   struct Mailbox *mailbox; ///< Mailbox this represents
   bool is_hidden;          ///< Don't show, e.g. $sidebar_new_mail_only
+  enum ColorId color;      ///< Colour to use
 };
 
 /**
@@ -78,6 +70,11 @@ struct SidebarWindowData
   short divider_width;       ///< Width of the divider in screen columns
   enum DivType divider_type; ///< Type of divider, e.g. #SB_DIV_UTF8
 };
+
+// sidebar.c
+void sb_win_init        (struct MuttWindow *dlg);
+void sb_win_shutdown    (struct MuttWindow *dlg);
+bool select_next        (struct SidebarWindowData *wdata);
 
 // observer.c
 int sb_insertion_observer(struct NotifyCallback *nc);

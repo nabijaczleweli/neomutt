@@ -28,6 +28,8 @@
 
 #include "config.h"
 #include <stdbool.h>
+#include <string.h>
+#include "sidebar_private.h"
 #include "mutt/lib.h"
 #include "config/lib.h"
 #include "gui/lib.h"
