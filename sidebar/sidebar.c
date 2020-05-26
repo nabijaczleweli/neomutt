@@ -66,6 +66,9 @@ short C_SidebarWidth;      ///< Config: (sidebar) Width of the sidebar
 
 struct ListHead SidebarWhitelist = STAILQ_HEAD_INITIALIZER(SidebarWhitelist); ///< List of mailboxes to always display in the sidebar
 
+/* Previous values for some sidebar config */
+static short PreviousSort = SORT_ORDER; /* sidebar_sort_method */
+
 int EntryCount = 0;
 int EntryLen = 0;
 struct SbEntry **Entries = NULL;
@@ -74,9 +77,6 @@ int TopIndex = -1; ///< First mailbox visible in sidebar
 int OpnIndex = -1; ///< Current (open) mailbox
 int HilIndex = -1; ///< Highlighted mailbox
 int BotIndex = -1; ///< Last mailbox visible in sidebar
-
-/* Previous values for some sidebar config */
-static short PreviousSort = SORT_ORDER; /* sidebar_sort_method */
 
 /**
  * sidebar_format_str - Format a string for the sidebar - Implements ::format_t
