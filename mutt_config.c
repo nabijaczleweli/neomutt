@@ -4967,6 +4967,10 @@ struct ConfigDef MuttVars[] = {
 #endif
   /*--*/
 
+#ifdef USE_DEVEL_WIDESCREEN
+  { "devel_index_widescreen", DT_BOOL, &C_DevelIndexWidescreen, false },
+#endif
+
   { "escape", DT_DEPRECATED|DT_STRING, &C_Escape, IP "~" },
 #if defined(HAVE_QDBM) || defined(HAVE_TC) || defined(HAVE_KC)
   { "header_cache_compress",     DT_DEPRECATED|DT_BOOL,            &C_HeaderCacheCompress,    false   },
