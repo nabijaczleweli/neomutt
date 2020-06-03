@@ -4185,6 +4185,8 @@ void index_pager_shutdown(struct MuttWindow *dlg)
     return;
 
   notify_observer_remove(NeoMutt->notify, sb_observer, win_sidebar);
+
+  notify_observer_remove(NeoMutt->notify, mutt_dlgindex_observer, dlg);
 }
 
 /**
