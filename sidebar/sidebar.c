@@ -981,6 +981,7 @@ void sb_set_open_mailbox(struct MuttWindow *win, struct Mailbox *m)
 /**
  * sb_notify_mailbox - The state of a Mailbox is about to change
  * @param win     Sidebar Window
+ * @param wdata   Sidebar data
  * @param m       Folder
  * @param created True if folder created, false if deleted
  *
@@ -990,12 +991,12 @@ void sb_set_open_mailbox(struct MuttWindow *win, struct Mailbox *m)
  *
  * Before a deletion, check that our pointers won't be invalidated.
  */
-void sb_notify_mailbox(struct MuttWindow *win, struct Mailbox *m, bool created)
+void sb_notify_mailbox(struct MuttWindow *win, struct SidebarWindowData *wdata,
+                       struct Mailbox *m, bool created)
 {
   if (!m)
     return;
 
-  struct SidebarWindowData *wdata = sb_wdata_get(win);
   /* Any new/deleted mailboxes will cause a refresh.  As long as
    * they're valid, our pointers will be updated in prepare_sidebar() */
 
@@ -1082,7 +1083,7 @@ void sb_draw(struct MuttWindow *win)
     struct MailboxNode *np = NULL;
     STAILQ_FOREACH(np, &ml, entries)
     {
-      sb_notify_mailbox(win, np->mailbox, true);
+      sb_notify_mailbox(win, wdata, np->mailbox, true);
     }
     neomutt_mailboxlist_clear(&ml);
   }
@@ -1136,7 +1137,10 @@ void sb_win_init(struct MuttWindow *dlg)
     mutt_window_add_child(dlg, cont_right);
   }
 
-  notify_observer_add(NeoMutt->notify, sb_observer, win_sidebar);
+  // Listen to global events
+  notify_observer_add(NeoMutt->notify, sb_neomutt_observer, win_sidebar);
+  // Only listen to OUR index events
+  notify_observer_add(dlg->notify, sb_dialog_observer, win_sidebar);
 }
 
 /**
@@ -1149,7 +1153,8 @@ void sb_win_shutdown(struct MuttWindow *dlg)
   if (!win)
     return;
 
-  notify_observer_remove(NeoMutt->notify, sb_observer, win);
+  notify_observer_remove(NeoMutt->notify, sb_neomutt_observer, win);
+  notify_observer_remove(dlg->notify, sb_dialog_observer, win);
 }
 
 /**
