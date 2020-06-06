@@ -80,7 +80,8 @@ void maildir_edata_free(void **ptr)
   if (!ptr || !*ptr)
     return;
 
-  // struct MaildirEmailData *edata = *ptr;
+  struct MaildirEmailData *edata = *ptr;
+  FREE(&edata->maildir_flags);
 
   FREE(ptr);
 }
@@ -409,6 +410,9 @@ int maildir_parse_dir(struct Mailbox *m, struct Maildir ***last,
     mutt_debug(LL_DEBUG2, "queueing %s\n", de->d_name);
 
     e = email_new();
+    e->edata = maildir_edata_new();
+    e->edata_free = maildir_edata_free;
+
     e->old = is_old;
     if (m->type == MUTT_MAILDIR)
       maildir_parse_flags(e, de->d_name);
@@ -774,6 +778,8 @@ void maildir_delayed_parsing(struct Mailbox *m, struct Maildir **md, struct Prog
 
     if (hce.email && (rc == 0) && (lastchanged.st_mtime <= hce.uidvalidity))
     {
+      hce.email->edata = maildir_edata_new();
+      hce.email->edata_free = maildir_edata_free;
       hce.email->old = p->email->old;
       hce.email->path = mutt_str_dup(p->email->path);
       email_free(&p->email);
@@ -1254,13 +1260,15 @@ void maildir_parse_flags(struct Email *e, const char *path)
   e->read = false;
   e->replied = false;
 
+  struct MaildirEmailData *edata = maildir_edata_get(e);
+
   char *p = strrchr(path, ':');
   if (p && mutt_str_startswith(p + 1, "2,"))
   {
     p += 3;
 
-    mutt_str_replace(&e->maildir_flags, p);
-    q = e->maildir_flags;
+    mutt_str_replace(&edata->maildir_flags, p);
+    q = edata->maildir_flags;
 
     while (*p)
     {
@@ -1294,8 +1302,8 @@ void maildir_parse_flags(struct Email *e, const char *path)
     }
   }
 
-  if (q == e->maildir_flags)
-    FREE(&e->maildir_flags);
+  if (q == edata->maildir_flags)
+    FREE(&edata->maildir_flags);
   else if (q)
     *q = '\0';
 }
@@ -1316,7 +1324,11 @@ struct Email *maildir_parse_stream(enum MailboxType type, FILE *fp,
                                    const char *fname, bool is_old, struct Email *e)
 {
   if (!e)
+  {
     e = email_new();
+    e->edata = maildir_edata_new();
+    e->edata_free = maildir_edata_free;
+  }
   e->env = mutt_rfc822_read_header(fp, e, false, false);
 
   struct stat st;
