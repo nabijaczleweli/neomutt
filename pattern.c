@@ -162,6 +162,31 @@ enum RangeSide
 };
 
 /**
+ * enum PatternEat - Function to process pattern arguments
+ *
+ * Values for PatternFlags.eat_arg
+ */
+enum PatternEat
+{
+  EAT_NONE,          ///< No arguments required
+  EAT_REGEX,         ///< Process a regex
+  EAT_DATE,          ///< Process a date (range)
+  EAT_RANGE,         ///< Process a number (range)
+  EAT_MESSAGE_RANGE, ///< Process a message number (range)
+  EAT_QUERY,         ///< Process a query string
+};
+
+/**
+ * eat_arg_t - Function to parse a pattern
+ * @param pat   Pattern to store the results in
+ * @param flags Flags, e.g. #MUTT_PC_PATTERN_DYNAMIC
+ * @param s     String to parse
+ * @param err   Buffer for error messages
+ * @retval true If the pattern was read successfully
+ */
+bool (*eat_arg_t)(struct Pattern *pat, int flags, struct Buffer *s, struct Buffer *err);
+
+/**
  * struct PatternFlags - Mapping between user character and internal constant
  */
 struct PatternFlags
@@ -170,15 +195,8 @@ struct PatternFlags
   int op;    ///< Operation to perform, e.g. #MUTT_PAT_SCORE
   int flags; ///< Pattern flags, e.g. #MUTT_PC_FULL_MSG
 
-  /**
-   * eat_arg - Function to parse a pattern
-   * @param pat   Pattern to store the results in
-   * @param flags Flags, e.g. #MUTT_PC_PATTERN_DYNAMIC
-   * @param s     String to parse
-   * @param err   Buffer for error messages
-   * @retval true If the pattern was read successfully
-   */
-  bool (*eat_arg)(struct Pattern *pat, int flags, struct Buffer *s, struct Buffer *err);
+  enum PatternEat eat_arg;
+  char *desc;
 };
 
 // clang-format off
@@ -208,7 +226,7 @@ static char LastSearchExpn[1024] = { 0 }; ///< expanded version of LastSearch
 typedef bool (*addr_predicate_t)(const struct Address *a);
 
 /**
- * eat_regex - Parse a regex - Implements Pattern::eat_arg()
+ * eat_regex - Parse a regex - Implements ::eat_arg_t
  */
 static bool eat_regex(struct Pattern *pat, int flags, struct Buffer *s, struct Buffer *err)
 {
@@ -276,7 +294,7 @@ static bool add_query_msgid(char *line, int line_num, void *user_data)
 }
 
 /**
- * eat_query - Parse a query for an external search program - Implements Pattern::eat_arg()
+ * eat_query - Parse a query for an external search program - Implements ::eat_arg_t
  */
 static bool eat_query(struct Pattern *pat, int flags, struct Buffer *s, struct Buffer *err)
 {
@@ -744,7 +762,7 @@ static bool eval_date_minmax(struct Pattern *pat, const char *s, struct Buffer *
 }
 
 /**
- * eat_range - Parse a number range - Implements Pattern::eat_arg()
+ * eat_range - Parse a number range - Implements ::eat_arg_t
  */
 static bool eat_range(struct Pattern *pat, int flags, struct Buffer *s, struct Buffer *err)
 {
@@ -1028,7 +1046,7 @@ static int eat_range_by_regex(struct Pattern *pat, struct Buffer *s, int kind,
 }
 
 /**
- * eat_message_range - Parse a range of message numbers - Implements Pattern::eat_arg()
+ * eat_message_range - Parse a range of message numbers - Implements ::eat_arg_t
  */
 static bool eat_message_range(struct Pattern *pat, int flags, struct Buffer *s,
                               struct Buffer *err)
@@ -1072,7 +1090,7 @@ static bool eat_message_range(struct Pattern *pat, int flags, struct Buffer *s,
 }
 
 /**
- * eat_date - Parse a date pattern - Implements Pattern::eat_arg()
+ * eat_date - Parse a date pattern - Implements ::eat_arg_t
  */
 static bool eat_date(struct Pattern *pat, int flags, struct Buffer *s, struct Buffer *err)
 {
@@ -1286,57 +1304,153 @@ static bool msg_search(struct Mailbox *m, struct Pattern *pat, int msgno)
  * Flags - Lookup table for all patterns
  */
 static const struct PatternFlags Flags[] = {
-  { 'A', MUTT_ALL,                 0,                NULL              },
-  { 'b', MUTT_PAT_BODY,            MUTT_PC_FULL_MSG|MUTT_PC_SEND_MODE_SEARCH, eat_regex },
-  { 'B', MUTT_PAT_WHOLE_MSG,       MUTT_PC_FULL_MSG|MUTT_PC_SEND_MODE_SEARCH, eat_regex },
-  { 'c', MUTT_PAT_CC,              0,                eat_regex         },
-  { 'C', MUTT_PAT_RECIPIENT,       0,                eat_regex         },
-  { 'd', MUTT_PAT_DATE,            0,                eat_date          },
-  { 'D', MUTT_DELETED,             0,                NULL              },
-  { 'e', MUTT_PAT_SENDER,          0,                eat_regex         },
-  { 'E', MUTT_EXPIRED,             0,                NULL              },
-  { 'f', MUTT_PAT_FROM,            0,                eat_regex         },
-  { 'F', MUTT_FLAG,                0,                NULL              },
-  { 'g', MUTT_PAT_CRYPT_SIGN,      0,                NULL              },
-  { 'G', MUTT_PAT_CRYPT_ENCRYPT,   0,                NULL              },
-  { 'h', MUTT_PAT_HEADER,          MUTT_PC_FULL_MSG|MUTT_PC_SEND_MODE_SEARCH, eat_regex },
-  { 'H', MUTT_PAT_HORMEL,          0,                eat_regex         },
-  { 'i', MUTT_PAT_ID,              0,                eat_regex         },
-  { 'I', MUTT_PAT_ID_EXTERNAL,     0,                eat_query         },
-  { 'k', MUTT_PAT_PGP_KEY,         0,                NULL              },
-  { 'l', MUTT_PAT_LIST,            0,                NULL              },
-  { 'L', MUTT_PAT_ADDRESS,         0,                eat_regex         },
-  { 'm', MUTT_PAT_MESSAGE,         0,                eat_message_range },
-  { 'M', MUTT_PAT_MIMETYPE,        MUTT_PC_FULL_MSG, eat_regex         },
-  { 'n', MUTT_PAT_SCORE,           0,                eat_range         },
-  { 'N', MUTT_NEW,                 0,                NULL              },
-  { 'O', MUTT_OLD,                 0,                NULL              },
-  { 'p', MUTT_PAT_PERSONAL_RECIP,  0,                NULL              },
-  { 'P', MUTT_PAT_PERSONAL_FROM,   0,                NULL              },
-  { 'Q', MUTT_REPLIED,             0,                NULL              },
-  { 'r', MUTT_PAT_DATE_RECEIVED,   0,                eat_date          },
-  { 'R', MUTT_READ,                0,                NULL              },
-  { 's', MUTT_PAT_SUBJECT,         0,                eat_regex         },
-  { 'S', MUTT_SUPERSEDED,          0,                NULL              },
-  { 't', MUTT_PAT_TO,              0,                eat_regex         },
-  { 'T', MUTT_TAG,                 0,                NULL              },
-  { 'u', MUTT_PAT_SUBSCRIBED_LIST, 0,                NULL              },
-  { 'U', MUTT_UNREAD,              0,                NULL              },
-  { 'v', MUTT_PAT_COLLAPSED,       0,                NULL              },
-  { 'V', MUTT_PAT_CRYPT_VERIFIED,  0,                NULL              },
+  { 'A', MUTT_ALL, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~A
+    N_("all messages") },
+  { 'b', MUTT_PAT_BODY, MUTT_PC_FULL_MSG | MUTT_PC_SEND_MODE_SEARCH, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~b
+    N_("messages whose body matches EXPR") },
+  { 'B', MUTT_PAT_WHOLE_MSG, MUTT_PC_FULL_MSG | MUTT_PC_SEND_MODE_SEARCH, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~B
+    N_("messages whose body or headers match EXPR") },
+  { 'c', MUTT_PAT_CC, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~c
+    N_("messages whose CC header matches EXPR") },
+  { 'C', MUTT_PAT_RECIPIENT, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~C
+    N_("messages whose recipient matches EXPR") },
+  { 'd', MUTT_PAT_DATE, 0, EAT_DATE,
+    // L10N: Pattern Completion Menu description for ~d
+    N_("messages sent in DATERANGE") },
+  { 'D', MUTT_DELETED, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~D
+    N_("deleted messages") },
+  { 'e', MUTT_PAT_SENDER, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~e
+    N_("messages whose Sender header matches EXPR") },
+  { 'E', MUTT_EXPIRED, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~E
+    N_("expired messages") },
+  { 'f', MUTT_PAT_FROM, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~f
+    N_("messages whose C_From header matches EXPR") },
+  { 'F', MUTT_FLAG, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~F
+    N_("flagged messages") },
+  { 'g', MUTT_PAT_CRYPT_SIGN, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~g
+    N_("cryptographically signed messages") },
+  { 'G', MUTT_PAT_CRYPT_ENCRYPT, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~G
+    N_("cryptographically encrypted messages") },
+  { 'h', MUTT_PAT_HEADER, MUTT_PC_FULL_MSG | MUTT_PC_SEND_MODE_SEARCH, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~h
+    N_("messages whose header matches EXPR") },
+  { 'H', MUTT_PAT_HORMEL, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~H
+    N_("messages whose spam tag matches EXPR") },
+  { 'i', MUTT_PAT_ID, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~i
+    N_("messages whose Message-ID matches EXPR") },
+  { 'I', MUTT_PAT_ID_EXTERNAL, 0, EAT_QUERY,
+    // L10N: Pattern Completion Menu description for ~I
+    N_("messages whose Message-ID is included in the results returned from an external search program") },
+  { 'k', MUTT_PAT_PGP_KEY, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~k
+    N_("messages which contain PGP key") },
+  { 'l', MUTT_PAT_LIST, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~l
+    N_("messages addressed to known mailing lists") },
+  { 'L', MUTT_PAT_ADDRESS, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~L
+    N_("messages whose C_From/Sender/To/CC matches EXPR") },
+  { 'm', MUTT_PAT_MESSAGE, 0, EAT_MESSAGE_RANGE,
+    // L10N: Pattern Completion Menu description for ~m
+    N_("messages whose number is in RANGE") },
+  { 'M', MUTT_PAT_MIMETYPE, MUTT_PC_FULL_MSG, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~M
+    N_("messages with a Content-Type matching EXPR") },
+  { 'n', MUTT_PAT_SCORE, 0, EAT_RANGE,
+    // L10N: Pattern Completion Menu description for ~n
+    N_("messages whose score is in RANGE") },
+  { 'N', MUTT_NEW, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~N
+    N_("new messages") },
+  { 'O', MUTT_OLD, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~O
+    N_("old messages") },
+  { 'p', MUTT_PAT_PERSONAL_RECIP, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~p
+    N_("messages addressed to you") },
+  { 'P', MUTT_PAT_PERSONAL_FROM, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~P
+    N_("messages from you") },
+  { 'Q', MUTT_REPLIED, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~Q
+    N_("messages which have been replied to") },
+  { 'r', MUTT_PAT_DATE_RECEIVED, 0, EAT_DATE,
+    // L10N: Pattern Completion Menu description for ~r
+    N_("messages received in DATERANGE") },
+  { 'R', MUTT_READ, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~R
+    N_("already read messages") },
+  { 's', MUTT_PAT_SUBJECT, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~s
+    N_("messages whose Subject header matches EXPR") },
+  { 'S', MUTT_SUPERSEDED, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~S
+    N_("superseded messages") },
+  { 't', MUTT_PAT_TO, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~t
+    N_("messages whose To header matches EXPR") },
+  { 'T', MUTT_TAG, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~T
+    N_("tagged messages") },
+  { 'u', MUTT_PAT_SUBSCRIBED_LIST, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~u
+    N_("messages addressed to subscribed mailing lists") },
+  { 'U', MUTT_UNREAD, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~U
+    N_("unread messages") },
+  { 'v', MUTT_PAT_COLLAPSED, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~v
+    N_("messages in collapsed threads") },
+  { 'V', MUTT_PAT_CRYPT_VERIFIED, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~V
+    N_("cryptographically verified messages") },
 #ifdef USE_NNTP
-  { 'w', MUTT_PAT_NEWSGROUPS,      0,                eat_regex         },
+  { 'w', MUTT_PAT_NEWSGROUPS, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~w
+    N_("newsgroups matching EXPR") },
 #endif
-  { 'x', MUTT_PAT_REFERENCE,       0,                eat_regex         },
-  { 'X', MUTT_PAT_MIMEATTACH,      0,                eat_range         },
-  { 'y', MUTT_PAT_XLABEL,          0,                eat_regex         },
-  { 'Y', MUTT_PAT_DRIVER_TAGS,     0,                eat_regex         },
-  { 'z', MUTT_PAT_SIZE,            0,                eat_range         },
-  { '=', MUTT_PAT_DUPLICATED,      0,                NULL              },
-  { '$', MUTT_PAT_UNREFERENCED,    0,                NULL              },
-  { '#', MUTT_PAT_BROKEN,          0,                NULL              },
-  { '/', MUTT_PAT_SERVERSEARCH,    0,                eat_regex         },
-  { 0,   0,                        0,                NULL              },
+  { 'x', MUTT_PAT_REFERENCE, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~x
+    N_("messages whose References header matches EXPR") },
+  { 'X', MUTT_PAT_MIMEATTACH, 0, EAT_RANGE,
+    // L10N: Pattern Completion Menu description for ~X
+    N_("messages with RANGE attachments") },
+  { 'y', MUTT_PAT_XLABEL, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~y
+    N_("messages whose X-Label header matches EXPR") },
+  { 'Y', MUTT_PAT_DRIVER_TAGS, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for ~Y
+    N_("messages whose tags match EXPR") },
+  { 'z', MUTT_PAT_SIZE, 0, EAT_RANGE,
+    // L10N: Pattern Completion Menu description for ~z
+    N_("messages whose size is in RANGE") },
+  { '=', MUTT_PAT_DUPLICATED, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~=
+    N_("duplicated messages") },
+  { '$', MUTT_PAT_UNREFERENCED, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~$
+    N_("unreferenced messages") },
+  { '#', MUTT_PAT_BROKEN, 0, EAT_NONE,
+    // L10N: Pattern Completion Menu description for ~#
+    N_("broken threads") },
+  { '/', MUTT_PAT_SERVERSEARCH, 0, EAT_REGEX,
+    // L10N: Pattern Completion Menu description for =/
+    N_("IMAP custom server-side search for STRING") },
+  { 0, 0, 0, EAT_NONE, NULL, },
 };
 // clang-format on
 
@@ -1653,12 +1767,33 @@ struct PatternList *mutt_pattern_comp(const char *s, PatternCompFlags flags, str
 
         if (entry->eat_arg)
         {
+          int rc_eat = 0;
           if (ps.dptr[0] == '\0')
           {
             mutt_buffer_printf(err, "%s", _("missing parameter"));
             goto cleanup;
           }
-          if (!entry->eat_arg(pat, flags, &ps, err))
+          switch (entry->eat_arg)
+          {
+            case EAT_REGEX:
+              rc_eat = eat_regex(pat, flags, &ps, err);
+              break;
+            case EAT_DATE:
+              rc_eat = eat_date(pat, flags, &ps, err);
+              break;
+            case EAT_RANGE:
+              rc_eat = eat_range(pat, flags, &ps, err);
+              break;
+            case EAT_MESSAGE_RANGE:
+              rc_eat = eat_message_range(pat, flags, &ps, err);
+              break;
+            case EAT_QUERY:
+              rc_eat = eat_query(pat, flags, &ps, err);
+              break;
+            default:
+              break;
+          }
+          if (rc_eat == -1)
           {
             goto cleanup;
           }
@@ -2888,4 +3023,236 @@ int mutt_search_command(int cur, int op)
 
   mutt_error(_("Not found"));
   return -1;
+}
+
+/* Pattern Completion Menu */
+
+struct PatternEntry
+{
+  int num;
+  const char *tag;   ///< Copied to buffer if selected
+  const char *expr;  ///< Displayed in the menu
+  const char *descr; ///< Description of pattern
+};
+
+static const struct Mapping PatternHelp[] = {
+  { N_("Exit"), OP_EXIT },
+  { N_("Select"), OP_GENERIC_SELECT_ENTRY },
+  { N_("Help"), OP_HELP },
+  { NULL, 0 },
+};
+
+/**
+ * pattern_format_str - Format a string for the pattern completion menu - Implements ::format_t
+ *
+ * | Expando | Description
+ * |:--------|:----------------------
+ * | \%d     | Pattern description
+ * | \%e     | Pattern expression
+ * | \%n     | Index number
+ */
+static const char *pattern_format_str(char *buf, size_t buflen, size_t col, int cols,
+                                      char op, const char *src, const char *prec,
+                                      const char *if_str, const char *else_str,
+                                      intptr_t data, MuttFormatFlags flags)
+{
+  struct PatternEntry *entry = (struct PatternEntry *) data;
+
+  switch (op)
+  {
+    case 'd':
+      mutt_format_s(buf, buflen, prec, NONULL(entry->descr));
+      break;
+    case 'e':
+      mutt_format_s(buf, buflen, prec, NONULL(entry->expr));
+      break;
+    case 'n':
+    {
+      char tmp[32];
+      snprintf(tmp, sizeof(tmp), "%%%sd", prec);
+      snprintf(buf, buflen, tmp, entry->num);
+      break;
+    }
+  }
+
+  return src;
+}
+
+static void make_pattern_entry(char *s, size_t slen, struct Menu *menu, int num)
+{
+  struct PatternEntry *entry = &((struct PatternEntry *) menu->mdata)[num];
+
+  mutt_expando_format(s, slen, 0, menu->win_index->state.cols, NONULL(C_PatternFormat),
+                      pattern_format_str, (intptr_t) entry, MUTT_FORMAT_ARROWCURSOR);
+}
+
+static struct Menu *create_pattern_menu(void)
+{
+  struct PatternEntry *entries = NULL;
+  int num_entries = 0, i = 0;
+  char *helpstr;
+  struct Buffer *entrybuf = NULL;
+  const char *patternstr;
+
+  while (Flags[num_entries].tag)
+    num_entries++;
+  /* Add three more hard-coded entries */
+  num_entries += 3;
+
+  struct Menu *menu = mutt_menu_new(MENU_GENERIC);
+  menu->make_entry = make_pattern_entry;
+
+  /* L10N:
+     Pattern completion menu title
+  */
+  menu->title = _("Patterns");
+  helpstr = mutt_mem_malloc(256);
+  menu->help = mutt_compile_help(helpstr, 256, MENU_GENERIC, PatternHelp);
+
+  menu->mdata = entries = mutt_mem_calloc(num_entries, sizeof(struct PatternEntry));
+  menu->max = num_entries;
+
+  entrybuf = mutt_buffer_pool_get();
+  while (Flags[i].tag)
+  {
+    entries[i].num = i + 1;
+
+    mutt_buffer_printf(entrybuf, "~%c", (char) Flags[i].tag);
+    entries[i].tag = mutt_str_dup(mutt_b2s(entrybuf));
+
+    switch (Flags[i].eat_arg)
+    {
+      case EAT_REGEX:
+        /* L10N:
+           Pattern Completion Menu argument type: a regular expression
+        */
+        mutt_buffer_add_printf(entrybuf, " %s", _("EXPR"));
+        break;
+      case EAT_RANGE:
+      case EAT_MESSAGE_RANGE:
+        /* L10N:
+           Pattern Completion Menu argument type: a numeric range.
+           Used by ~m, ~n, ~X, ~z.
+        */
+        mutt_buffer_add_printf(entrybuf, " %s", _("RANGE"));
+        break;
+      case EAT_DATE:
+        /* L10N:
+           Pattern Completion Menu argument type: a date range
+           Used by ~d, ~r.
+        */
+        mutt_buffer_add_printf(entrybuf, " %s", _("DATERANGE"));
+        break;
+      case EAT_QUERY:
+        /* L10N:
+           Pattern Completion Menu argument type: a query
+           Used by ~I.
+        */
+        mutt_buffer_add_printf(entrybuf, " %s", _("QUERY"));
+        break;
+      default:
+        break;
+    }
+    entries[i].expr = mutt_str_dup(mutt_b2s(entrybuf));
+    entries[i].descr = mutt_str_dup(_(Flags[i].desc));
+
+    i++;
+  }
+
+  /* Add struct MuttThread patterns manually.
+   * Note we allocated 3 extra slots for these above. */
+
+  /* L10N:
+     Pattern Completion Menu argument type: a nested pattern.
+     Used by ~(), ~<(), ~>().
+  */
+  patternstr = _("PATTERN");
+
+  entries[i].num = i + 1;
+  entries[i].tag = mutt_str_dup("~()");
+  mutt_buffer_printf(entrybuf, "~(%s)", patternstr);
+  entries[i].expr = mutt_str_dup(mutt_b2s(entrybuf));
+  /* L10N:
+     Pattern Completion Menu description for ~()
+  */
+  entries[i].descr = mutt_str_dup(
+      _("messages in threads containing messages matching PATTERN"));
+  i++;
+
+  entries[i].num = i + 1;
+  entries[i].tag = mutt_str_dup("~<()");
+  mutt_buffer_printf(entrybuf, "~<(%s)", patternstr);
+  entries[i].expr = mutt_str_dup(mutt_b2s(entrybuf));
+  /* L10N:
+     Pattern Completion Menu description for ~<()
+  */
+  entries[i].descr =
+      mutt_str_dup(_("messages whose immediate parent matches PATTERN"));
+  i++;
+
+  entries[i].num = i + 1;
+  entries[i].tag = mutt_str_dup("~>()");
+  mutt_buffer_printf(entrybuf, "~>(%s)", patternstr);
+  entries[i].expr = mutt_str_dup(mutt_b2s(entrybuf));
+  /* L10N:
+     Pattern Completion Menu description for ~>()
+  */
+  entries[i].descr =
+      mutt_str_dup(_("messages having an immediate child matching PATTERN"));
+
+  mutt_menu_push_current(menu);
+
+  mutt_buffer_pool_release(&entrybuf);
+
+  return menu;
+}
+
+static void free_pattern_menu(struct Menu **pmenu)
+{
+  if (!pmenu || !*pmenu)
+    return;
+
+  struct Menu *menu = *pmenu;
+  mutt_menu_pop_current(menu);
+
+  struct PatternEntry *entries = (struct PatternEntry *) menu->mdata;
+  while (menu->max)
+  {
+    menu->max--;
+    FREE(&entries[menu->max].tag);
+    FREE(&entries[menu->max].expr);
+    FREE(&entries[menu->max].descr);
+  }
+  FREE(&menu->mdata);
+
+  FREE(&menu->help);
+  mutt_menu_free(pmenu);
+}
+
+int mutt_ask_pattern(char *buf, size_t buflen)
+{
+  int rc = 0, done = 0;
+  struct PatternEntry *entry;
+
+  struct Menu *menu = create_pattern_menu();
+
+  while (!done)
+  {
+    switch (mutt_menu_loop(menu))
+    {
+      case OP_GENERIC_SELECT_ENTRY:
+        entry = (struct PatternEntry *) menu->mdata + menu->current;
+        mutt_str_copy(buf, entry->tag, buflen);
+        rc = 1;
+        done = 1;
+        break;
+
+      case OP_EXIT:
+        done = 1;
+        break;
+    }
+  }
+
+  free_pattern_menu(&menu);
+  return (rc);
 }
