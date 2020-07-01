@@ -127,6 +127,11 @@ int fd_recurse = 0;
 
 #define BUFSIZE 2048
 
+/**
+ * types - XXX
+ *
+ * @note The following strings must be in the same order as DataType
+ */
 struct VariableTypes types[] = {
   // clang-format off
   { "DT_NONE",    "-none-"             },
@@ -149,8 +154,9 @@ struct VariableTypes types[] = {
   // clang-format on
 };
 
-/* skip whitespace */
-
+/**
+ * skip_ws - skip whitespace
+ */
 static char *skip_ws(char *s)
 {
   while (*s && isspace((unsigned char) *s))
@@ -159,7 +165,9 @@ static char *skip_ws(char *s)
   return s;
 }
 
-/* isolate a token */
+/**
+ * get_token - XXX
+ */
 static char *get_token(char *d, size_t l, char *s)
 {
   static char single_char_tokens[] = "[]{},;|";
@@ -252,6 +260,9 @@ static char *get_token(char *d, size_t l, char *s)
   return t;
 }
 
+/**
+ * sgml_fputc - XXX
+ */
 static int sgml_fputc(int c, FILE *fp_out)
 {
   switch (c)
@@ -268,6 +279,9 @@ static int sgml_fputc(int c, FILE *fp_out)
   }
 }
 
+/**
+ * sgml_fputs - XXX
+ */
 static int sgml_fputs(const char *s, FILE *fp_out)
 {
   for (; *s; s++)
@@ -277,8 +291,9 @@ static int sgml_fputs(const char *s, FILE *fp_out)
   return 0;
 }
 
-/* print something. */
-
+/**
+ * print_it - print something
+ */
 static int print_it(enum OutputFormats format, int special, char *str, FILE *fp_out, int docstat)
 {
   int onl = docstat & (D_NL | D_NP);
@@ -733,8 +748,11 @@ static int print_it(enum OutputFormats format, int special, char *str, FILE *fp_
   return docstat;
 }
 
-/* close eventually-open environments. */
-
+/**
+ * flush_doc - XXX
+ *
+ * close eventually-open environments
+ */
 static int flush_doc(enum OutputFormats format, int docstat, FILE *fp_out)
 {
   if (docstat & D_INIT)
@@ -765,6 +783,9 @@ static int flush_doc(enum OutputFormats format, int docstat, FILE *fp_out)
   return D_INIT;
 }
 
+/**
+ * commit_buf - XXX
+ */
 static int commit_buf(enum OutputFormats format, char *buf, char **d, FILE *fp_out, int docstat)
 {
   if (*d > buf)
@@ -832,6 +853,9 @@ static int sgml_id_fputs(const char *s, FILE *fp_out)
   return 0;
 }
 
+/**
+ * print_ref - XXX
+ */
 static void print_ref(enum OutputFormats format, FILE *fp_out,
                       bool output_dollar, const char *ref)
 {
@@ -859,6 +883,9 @@ static void print_ref(enum OutputFormats format, FILE *fp_out,
   }
 }
 
+/**
+ * handle_docline - XXX
+ */
 static int handle_docline(enum OutputFormats format, char *l, FILE *fp_out, int docstat)
 {
   char buf[BUFSIZE];
@@ -980,6 +1007,9 @@ static int handle_docline(enum OutputFormats format, char *l, FILE *fp_out, int 
   return print_it(format, SP_NEWLINE, NULL, fp_out, docstat);
 }
 
+/**
+ * buf_to_type - XXX
+ */
 static int buf_to_type(const char *s)
 {
   for (int type = DT_NONE; types[type].machine; type++)
@@ -989,6 +1019,9 @@ static int buf_to_type(const char *s)
   return DT_NONE;
 }
 
+/**
+ * pretty_default - XXX
+ */
 static void pretty_default(char *t, size_t l, const char *s, int type)
 {
   memset(t, 0, l);
@@ -1066,6 +1099,9 @@ static void pretty_default(char *t, size_t l, const char *s, int type)
   }
 }
 
+/**
+ * char_to_escape - XXX
+ */
 static void char_to_escape(char *dest, unsigned int c)
 {
   switch (c)
@@ -1088,6 +1124,9 @@ static void char_to_escape(char *dest, unsigned int c)
   }
 }
 
+/**
+ * conf_char_to_escape - XXX
+ */
 static void conf_char_to_escape(unsigned int c, FILE *fp_out)
 {
   char buf[16];
@@ -1095,6 +1134,9 @@ static void conf_char_to_escape(unsigned int c, FILE *fp_out)
   fputs(buf, fp_out);
 }
 
+/**
+ * conf_print_strval - XXX
+ */
 static void conf_print_strval(const char *v, FILE *fp_out)
 {
   for (; *v; v++)
@@ -1111,6 +1153,9 @@ static void conf_print_strval(const char *v, FILE *fp_out)
   }
 }
 
+/**
+ * type2human - XXX
+ */
 static const char *type2human(int type)
 {
   return types[type].human;
@@ -1123,6 +1168,9 @@ static const char *type2human(int type)
  * a configuration variable.
  */
 
+/**
+ * man_print_strval - XXX
+ */
 static void man_print_strval(const char *v, FILE *fp_out)
 {
   for (; *v; v++)
@@ -1145,6 +1193,9 @@ static void man_print_strval(const char *v, FILE *fp_out)
   }
 }
 
+/**
+ * sgml_print_strval - XXX
+ */
 static void sgml_print_strval(const char *v, FILE *fp_out)
 {
   char buf[16];
@@ -1160,6 +1211,9 @@ static void sgml_print_strval(const char *v, FILE *fp_out)
   }
 }
 
+/**
+ * print_confline - XXX
+ */
 static void print_confline(enum OutputFormats format, const char *varname,
                            int type, const char *val, FILE *fp_out)
 {
@@ -1260,6 +1314,9 @@ static void print_confline(enum OutputFormats format, const char *varname,
   }
 }
 
+/**
+ * handle_confline - XXX
+ */
 static void handle_confline(enum OutputFormats format, char *s, FILE *fp_out)
 {
   char varname[BUFSIZE];
@@ -1309,6 +1366,9 @@ static void handle_confline(enum OutputFormats format, char *s, FILE *fp_out)
   print_confline(format, varname, type, val, fp_out);
 }
 
+/**
+ * makedoc - XXX
+ */
 static void makedoc(enum OutputFormats format, FILE *fp_in, FILE *fp_out)
 {
   char buffer[BUFSIZE];
@@ -1356,6 +1416,9 @@ static void makedoc(enum OutputFormats format, FILE *fp_in, FILE *fp_out)
   fputs("\n", fp_out);
 }
 
+/**
+ * main - XXX
+ */
 int main(int argc, char *argv[])
 {
   int c;

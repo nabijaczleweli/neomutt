@@ -717,7 +717,7 @@ int main(int argc, char *argv[], char *envp[])
 
   if (dump_variables)
   {
-    dump_config(cs, hide_sensitive ? CS_DUMP_HIDE_SENSITIVE : CS_DUMP_NO_FLAGS, stdout);
+    dump_config(cs, hide_sensitive ? CS_DUMP_HIDE_SENSITIVE : CS_DUMP_SHOW_DEFAULTS, stdout);
     goto main_ok; // TEST18: neomutt -D
   }
 
