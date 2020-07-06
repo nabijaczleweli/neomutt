@@ -379,6 +379,18 @@ int rfc3676_handler(struct Body *a, struct State *s)
   return 0;
 }
 
+bool mutt_rfc3676_is_format_flowed(struct Body *b)
+{
+  if (b && (b->type == TYPE_TEXT) && mutt_istr_equal("plain", b->subtype))
+  {
+    const char *format = mutt_param_get(&b->parameter, "format");
+    if (mutt_istr_equal("flowed", format))
+      return true;
+  }
+
+  return false;
+}
+
 /**
  * rfc3676_space_stuff - Perform required RFC3676 space stuffing
  * @param e       Email
@@ -392,7 +404,7 @@ int rfc3676_handler(struct Body *a, struct State *s)
  * Care is taken to preserve the e->content->filename, as
  * mutt -i -E can directly edit a passed in filename.
  */
-static void rfc3676_space_stuff(struct Email *e, bool unstuff)
+static void rfc3676_space_stuff(const char *filename, bool unstuff)
 {
   FILE *fp_out = NULL;
   char *buf = NULL;
@@ -400,7 +412,7 @@ static void rfc3676_space_stuff(struct Email *e, bool unstuff)
 
   struct Buffer *tmpfile = mutt_buffer_pool_get();
 
-  FILE *fp_in = mutt_file_fopen(e->content->filename, "r");
+  FILE *fp_in = mutt_file_fopen(filename, "r");
   if (!fp_in)
     goto bail;
 
@@ -429,21 +441,20 @@ static void rfc3676_space_stuff(struct Email *e, bool unstuff)
   FREE(&buf);
   mutt_file_fclose(&fp_in);
   mutt_file_fclose(&fp_out);
-  mutt_file_set_mtime(e->content->filename, mutt_b2s(tmpfile));
+  mutt_file_set_mtime(filename, mutt_b2s(tmpfile));
 
   fp_in = mutt_file_fopen(mutt_b2s(tmpfile), "r");
   if (!fp_in)
     goto bail;
 
-  if ((truncate(e->content->filename, 0) == -1) ||
-      ((fp_out = mutt_file_fopen(e->content->filename, "a")) == NULL))
+  if ((truncate(filename, 0) == -1) || ((fp_out = mutt_file_fopen(filename, "a")) == NULL))
   {
-    mutt_perror(e->content->filename);
+    mutt_perror(filename);
     goto bail;
   }
 
   mutt_file_copy_stream(fp_in, fp_out);
-  mutt_file_set_mtime(mutt_b2s(tmpfile), e->content->filename);
+  mutt_file_set_mtime(mutt_b2s(tmpfile), filename);
   unlink(mutt_b2s(tmpfile));
 
 bail:
@@ -465,12 +476,8 @@ void mutt_rfc3676_space_stuff(struct Email *e)
   if (!e || !e->content || !e->content->filename)
     return;
 
-  if ((e->content->type == TYPE_TEXT) && mutt_istr_equal("plain", e->content->subtype))
-  {
-    const char *format = mutt_param_get(&e->content->parameter, "format");
-    if (mutt_istr_equal("flowed", format))
-      rfc3676_space_stuff(e, false);
-  }
+  if (mutt_rfc3676_is_format_flowed(e->content))
+    rfc3676_space_stuff(e->content->filename, false);
 }
 
 /**
@@ -482,10 +489,42 @@ void mutt_rfc3676_space_unstuff(struct Email *e)
   if (!e || !e->content || !e->content->filename)
     return;
 
-  if ((e->content->type == TYPE_TEXT) && mutt_istr_equal("plain", e->content->subtype))
-  {
-    const char *format = mutt_param_get(&e->content->parameter, "format");
-    if (mutt_istr_equal("flowed", format))
-      rfc3676_space_stuff(e, true);
-  }
+  if (mutt_rfc3676_is_format_flowed(e->content))
+    rfc3676_space_stuff(e->content->filename, true);
+}
+
+/* This routine is used when saving/piping/viewing rfc3676 attachments.
+ *
+ * struct Body *b is optional, but if provided it will verify it is
+ * format-flowed.
+ *
+ * The filename, not b->filename or b->fp will be unstuffed.
+ */
+void mutt_rfc3676_space_unstuff_attachment(struct Body *b, const char *filename)
+{
+  if (!filename)
+    return;
+
+  if (b && !mutt_rfc3676_is_format_flowed(b))
+    return;
+
+  rfc3676_space_stuff(filename, 1);
+}
+
+/* This routine is used when filtering rfc3676 attachments.
+ *
+ * struct Body *b is optional, but if provided it will verify it is
+ * format-flowed.
+ *
+ * The filename, not b->filename or b->fp will be stuffed.
+ */
+void mutt_rfc3676_space_stuff_attachment(struct Body *b, const char *filename)
+{
+  if (!filename)
+    return;
+
+  if (b && !mutt_rfc3676_is_format_flowed(b))
+    return;
+
+  rfc3676_space_stuff(filename, 0);
 }
