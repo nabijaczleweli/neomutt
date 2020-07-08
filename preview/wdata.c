@@ -20,6 +20,6 @@ void preview_wdata_free(struct MuttWindow *win, void **ptr)
     if (!ptr || !*ptr)
         return;
 
-    struct PreviewWindowData *wdata = *ptr;
+    // struct PreviewWindowData *wdata = *ptr;
     FREE(ptr);
 }
