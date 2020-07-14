@@ -101,7 +101,7 @@ void window_notify_all(struct MuttWindow *win)
 }
 
 /**
- * window_set_visible - Set a Window (and its children) visible or hidden
+ * window_set_visible - Set a Window visible or hidden
  * @param win     Window
  * @param visible If true, make Window visible, otherwise hidden
  */
@@ -111,12 +111,6 @@ void window_set_visible(struct MuttWindow *win, bool visible)
     win = RootWindow;
 
   win->state.visible = visible;
-
-  struct MuttWindow *np = NULL;
-  TAILQ_FOREACH(np, &win->children, entries)
-  {
-    window_set_visible(np, visible);
-  }
 }
 
 /**
