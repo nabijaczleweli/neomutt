@@ -29,11 +29,17 @@
 
 #include "config.h"
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "private.h"
 #include "mutt/lib.h"
 #include "address/lib.h"
+#include "email/lib.h"
+#include "core/lib.h"
 #include "alias/lib.h"
+#include "mutt.h"
 #include "lib.h"
 #include "copy.h"
 #include "handler.h"
@@ -42,6 +48,7 @@
 #include "muttlib.h"
 #include "mx.h"
 #include "state.h"
+#include "ncrypt/lib.h"
 #include "send/lib.h"
 
 /**

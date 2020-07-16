@@ -30,7 +30,6 @@
 #include <stddef.h>
 #include <config/lib.h>
 #include <stdbool.h>
-#include "init.h"
 
 // clang-format off
 char *C_ExternalSearchCommand; ///< Config: External search command

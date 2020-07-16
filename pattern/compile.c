@@ -28,12 +28,19 @@
  */
 
 #include "config.h"
+#include <ctype.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "private.h"
 #include "mutt/lib.h"
 #include "address/lib.h"
 #include "email/lib.h"
 #include "core/lib.h"
+#include "mutt.h"
 #include "lib.h"
 #include "context.h"
 #include "init.h"

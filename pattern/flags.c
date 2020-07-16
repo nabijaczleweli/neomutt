@@ -28,7 +28,9 @@
  */
 
 #include "config.h"
+#include <stddef.h>
 #include "private.h"
+#include "mutt/lib.h"
 #include "mutt.h"
 #include "lib.h"
 
