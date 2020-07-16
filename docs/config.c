@@ -618,6 +618,13 @@
 ** $$save_name, $$force_name and "$fcc-hook".
 */
 
+{ "copy_decode_weed", DT_BOOL, false },
+/*
+** .pp
+** Controls whether NeoMutt will weed headers when invoking the
+** \fC<decode-copy>\fP or \fC<decode-save>\fP functions.
+*/
+
 { "crypt_autoencrypt", DT_BOOL, false },
 /*
 ** .pp
@@ -725,11 +732,12 @@
 /*
 ** .pp
 ** When set, NeoMutt will display protected headers ("Memory Hole") in the pager,
+** When set, NeoMutt will display protected headers in the pager,
 ** and will update the index and header cache with revised headers.
 ** .pp
 ** Protected headers are stored inside the encrypted or signed part of an
 ** an email, to prevent disclosure or tampering.
-** For more information see https://github.com/autocrypt/memoryhole.
+** For more information see https://github.com/autocrypt/protected-headers
 ** Currently NeoMutt only supports the Subject header.
 ** .pp
 ** Encrypted messages using protected headers often substitute the exposed
@@ -766,7 +774,7 @@
 ** (Crypto only)
 */
 
-{ "crypt_protected_headers_subject", DT_STRING, "Encrypted subject" },
+{ "crypt_protected_headers_subject", DT_STRING, "..." },
 /*
 ** .pp
 ** When $$crypt_protected_headers_write is set, and the message is marked
@@ -781,12 +789,12 @@
 { "crypt_protected_headers_write", DT_BOOL, false },
 /*
 ** .pp
-** When set, NeoMutt will generate protected headers ("Memory Hole") for
-** signed and encrypted emails.
+** When set, NeoMutt will generate protected headers for signed and encrypted
+** emails.
 ** .pp
 ** Protected headers are stored inside the encrypted or signed part of an
 ** an email, to prevent disclosure or tampering.
-** For more information see https://github.com/autocrypt/memoryhole.
+** For more information see https://github.com/autocrypt/protected-headers
 ** .pp
 ** Currently NeoMutt only supports the Subject header.
 ** (Crypto only)
@@ -1706,7 +1714,7 @@
 { "imap_deflate", DT_BOOL, true },
 /*
 ** .pp
-** When \fIset\fP, mutt will use the COMPRESS=DEFLATE extension (RFC4978)
+** When \fIset\fP, NeoMutt will use the COMPRESS=DEFLATE extension (RFC4978)
 ** if advertised by the server.
 ** .pp
 ** In general a good compression efficiency can be achieved, which
@@ -1725,10 +1733,11 @@
 { "imap_fetch_chunk_size", DT_LONG, 0 },
 /*
 ** .pp
-** When set to a value greater than 0, new headers will be downloaded
-** in sets of this size.  If you have a very large mailbox, this might
-** prevent a timeout and disconnect when opening the mailbox, by sending
-** a FETCH per set of this size instead of a single FETCH for all new
+** When set to a value greater than 0, new headers will be
+** downloaded in groups of this many headers per request.  If you
+** have a very large mailbox, this might prevent a timeout and
+** disconnect when opening the mailbox, by sending a FETCH per set
+** of this many headers, instead of a single FETCH for all new
 ** headers.
 */
 
@@ -2741,6 +2750,19 @@
 ** function.
 */
 
+{ "pattern_format", DT_STRING, "%2n %-15e  %d" },
+/*
+** .pp
+** This variable describes the format of the ``pattern completion'' menu. The
+** following \fCprintf(3)\fP-style sequences are understood:
+** .dl
+** .dt %d  .dd pattern description
+** .dt %e  .dd pattern expression
+** .dt %n  .dd index number
+** .de
+** .pp
+*/
+
 { "pgp_auto_decode", DT_BOOL, false },
 /*
 ** .pp
@@ -3203,10 +3225,19 @@
 { "pipe_decode", DT_BOOL, false },
 /*
 ** .pp
-** Used in connection with the \fC<pipe-message>\fP command.  When \fIunset\fP,
+** Used in connection with the \fC<pipe-message>\fP function.  When \fIunset\fP,
 ** NeoMutt will pipe the messages without any preprocessing. When \fIset\fP, NeoMutt
-** will weed headers and will attempt to decode the messages
-** first.
+** will attempt to decode the messages first.
+** .pp
+** Also see $$pipe_decode_weed, which controls whether headers will
+** be weeded when this is \fIset\fP.
+*/
+
+{ "pipe_decode_weed", DT_BOOL, true },
+/*
+** .pp
+** For \fC<pipe-message>\fP, when $$pipe_decode is set, this further
+** controls whether NeoMutt will weed headers.
 */
 
 { "pipe_sep", DT_STRING, "\n" },
@@ -3428,19 +3459,29 @@
 { "print_decode", DT_BOOL, true },
 /*
 ** .pp
-** Used in connection with the \fC<print-message>\fP command.  If this
+** Used in connection with the \fC<print-message>\fP function.  If this
 ** option is \fIset\fP, the message is decoded before it is passed to the
 ** external command specified by $$print_command.  If this option
 ** is \fIunset\fP, no processing will be applied to the message when
 ** printing it.  The latter setting may be useful if you are using
 ** some advanced printer filter which is able to properly format
 ** e-mail messages for printing.
+** .pp
+** Also see $$print_decode_weed, which controls whether headers will
+** be weeded when this is \fIset\fP.
+*/
+
+{ "print_decode_weed", DT_BOOL, true },
+/*
+** .pp
+** For \fC<print-message>\fP, when $$print_decode is set, this
+** further controls whether NeoMutt will weed headers.
 */
 
 { "print_split", DT_BOOL, false },
 /*
 ** .pp
-** Used in connection with the \fC<print-message>\fP command.  If this option
+** Used in connection with the \fC<print-message>\fP function.  If this option
 ** is \fIset\fP, the command specified by $$print_command is executed once for
 ** each message which is to be printed.  If this option is \fIunset\fP,
 ** the command specified by $$print_command is executed only once, and
@@ -4085,7 +4126,7 @@
 { "sidebar_sort_method", DT_SORT, SORT_ORDER },
 /*
 ** .pp
-** Specifies how to sort entries in the file browser.  By default, the
+** Specifies how to sort mailbox entries in the sidebar.  By default, the
 ** entries are sorted alphabetically.  Valid values:
 ** .il
 ** .dd alpha (alphabetically)
@@ -4099,7 +4140,7 @@
 ** .ie
 ** .pp
 ** You may optionally use the "reverse-" prefix to specify reverse sorting
-** order (example: "\fCset sort_browser=reverse-date\fP").
+** order (example: "\fCset sidebar_sort_method=reverse-alpha\fP").
 */
 
 { "sidebar_visible", DT_BOOL, false },
@@ -5252,7 +5293,9 @@
 /*
 ** .pp
 ** When \fIset\fP, NeoMutt will weed headers when displaying, forwarding,
-** printing, or replying to messages.
+** or replying to messages.
+** .pp
+** Also see $$copy_decode_weed, $$pipe_decode_weed, $$print_decode_weed.
 */
 
 { "wrap", DT_NUMBER, 0 },
@@ -5290,14 +5333,14 @@
 { "write_bcc", DT_BOOL, false },
 /*
 ** .pp
-** Controls whether mutt writes out the ``Bcc:'' header when
+** Controls whether NeoMutt writes out the ``Bcc:'' header when
 ** preparing messages to be sent.  Some MTAs, such as Exim and
 ** Courier, do not strip the ``Bcc:'' header; so it is advisable to
 ** leave this unset unless you have a particular need for the header
 ** to be in the sent message.
 ** .pp
-** If mutt is set to deliver directly via SMTP(see $$smtp_url),
-** this option does nothing: mutt will never write out the ``Bcc:''
+** If NeoMutt is set to deliver directly via SMTP(see $$smtp_url),
+** this option does nothing: NeoMutt will never write out the ``Bcc:''
 ** header in this case.
 ** .pp
 ** Note this option only affects the sending of messages.  Fcc'ed

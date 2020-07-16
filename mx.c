@@ -600,6 +600,14 @@ static int trash_append(struct Mailbox *m)
  * @note The flag retvals come from a call to a backend sync function
  *
  * @note Context will be freed after it's closed
+ *
+ * @note It's very important to ensure the mailbox is properly closed
+ *       before free'ing the context.  For selected mailboxes, IMAP
+ *       will cache the context inside connection->adata until
+ *       imap_close_mailbox() removes it.
+ *       Readonly, dontwrite, and append mailboxes are guaranteed to call
+ *       mx_fastclose_mailbox(), so for most of Mutt's code you won't see
+ *       return value checks for temporary contexts.
  */
 int mx_mbox_close(struct Context **ptr)
 {
@@ -1685,7 +1693,7 @@ struct Mailbox *mx_path_resolve(const char *path)
 }
 
 /**
- * mx_mbox_find_by_name - Find a Mailbox with given name under an Account
+ * mx_mbox_find_by_name_ac - Find a Mailbox with given name under an Account
  * @param a    Account to search
  * @param name Name to find
  * @retval ptr Mailbox
