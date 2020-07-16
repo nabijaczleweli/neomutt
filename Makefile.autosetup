@@ -458,8 +458,8 @@ $(PWD)/notmuch:
 ###############################################################################
 # libpattern
 LIBPATTERN=	libpattern.a
-LIBPATTERNOBJS=	pattern/config.o pattern/dlgpattern.o pattern/exec.o \
-		pattern/flags.o pattern/pattern.o
+LIBPATTERNOBJS=	pattern/compile.o pattern/config.o pattern/dlgpattern.o \
+		pattern/exec.o pattern/flags.o pattern/pattern.o
 CLEANFILES+=	$(LIBPATTERN) $(LIBPATTERNOBJS)
 ALLOBJS+=	$(LIBPATTERNOBJS)
 

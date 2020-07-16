@@ -25,6 +25,7 @@
 
 #include "config.h"
 #include <stdbool.h>
+#include "mutt/lib.h"
 
 struct Buffer;
 struct Pattern;
@@ -57,10 +58,71 @@ struct PatternFlags
   char *desc;
 };
 
+/**
+ * struct RangeRegex - Regular expression representing a range
+ */
+struct RangeRegex
+{
+  const char *raw; ///< Regex as string
+  int lgrp;        ///< Paren group matching the left side
+  int rgrp;        ///< Paren group matching the right side
+  bool ready;      ///< Compiled yet?
+  regex_t cooked;  ///< Compiled form
+};
+
+/**
+ * enum RangeType - Type of range
+ */
+enum RangeType
+{
+  RANGE_K_REL,  ///< Relative range
+  RANGE_K_ABS,  ///< Absolute range
+  RANGE_K_LT,   ///< Less-than range
+  RANGE_K_GT,   ///< Greater-than range
+  RANGE_K_BARE, ///< Single symbol
+  /* add new ones HERE */
+  RANGE_K_INVALID, ///< Range is invalid
+};
+
+// clang-format off
+/* The regexes in a modern format */
+#define RANGE_NUM_RX      "([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?"
+#define RANGE_REL_SLOT_RX "[[:blank:]]*([.^$]|-?" RANGE_NUM_RX ")?[[:blank:]]*"
+#define RANGE_REL_RX      "^" RANGE_REL_SLOT_RX "," RANGE_REL_SLOT_RX
+
+/* Almost the same, but no negative numbers allowed */
+#define RANGE_ABS_SLOT_RX "[[:blank:]]*([.^$]|" RANGE_NUM_RX ")?[[:blank:]]*"
+#define RANGE_ABS_RX      "^" RANGE_ABS_SLOT_RX "-" RANGE_ABS_SLOT_RX
+
+/* First group is intentionally empty */
+#define RANGE_LT_RX "^()[[:blank:]]*(<[[:blank:]]*" RANGE_NUM_RX ")[[:blank:]]*"
+#define RANGE_GT_RX "^()[[:blank:]]*(>[[:blank:]]*" RANGE_NUM_RX ")[[:blank:]]*"
+
+/* Single group for min and max */
+#define RANGE_BARE_RX "^[[:blank:]]*([.^$]|" RANGE_NUM_RX ")[[:blank:]]*"
+#define RANGE_RX_GROUPS 5
+
+#define RANGE_DOT    '.'
+#define RANGE_CIRCUM '^'
+#define RANGE_DOLLAR '$'
+#define RANGE_LT     '<'
+#define RANGE_GT     '>'
+// clang-format on
+
+/**
+ * enum RangeSide - Which side of the range
+ */
+enum RangeSide
+{
+  RANGE_S_LEFT,  ///< Left side of range
+  RANGE_S_RIGHT, ///< Right side of range
+};
+
 #define EMSG(e) (((e)->msgno) + 1)
 
 #define MUTT_MAXRANGE -1
 
+extern struct RangeRegex range_regexes[];
 extern const struct PatternFlags Flags[];
 
 extern char *C_ExternalSearchCommand;
