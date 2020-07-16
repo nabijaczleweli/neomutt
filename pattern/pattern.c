@@ -44,7 +44,7 @@
 #include "alias/lib.h"
 #include "gui/lib.h"
 #include "mutt.h"
-#include "pattern.h"
+#include "lib.h"
 #include "context.h"
 #include "copy.h"
 #include "handler.h"
@@ -3090,8 +3090,9 @@ static void make_pattern_entry(char *buf, size_t buflen, struct Menu *menu, int 
 {
   struct PatternEntry *entry = &((struct PatternEntry *) menu->mdata)[num];
 
-  mutt_expando_format(buf, buflen, 0, menu->win_index->state.cols, NONULL(C_PatternFormat),
-                      pattern_format_str, (intptr_t) entry, MUTT_FORMAT_ARROWCURSOR);
+  mutt_expando_format(buf, buflen, 0, menu->win_index->state.cols,
+                      NONULL(C_PatternFormat), pattern_format_str,
+                      (intptr_t) entry, MUTT_FORMAT_ARROWCURSOR);
 }
 
 /**
@@ -3182,7 +3183,8 @@ static struct Menu *create_pattern_menu(void)
   mutt_buffer_printf(entrybuf, "~(%s)", patternstr);
   entries[i].expr = mutt_str_dup(mutt_b2s(entrybuf));
   // L10N: Pattern Completion Menu description for ~()
-  entries[i].descr = mutt_str_dup(_("messages in threads containing messages matching PATTERN"));
+  entries[i].descr = mutt_str_dup(
+      _("messages in threads containing messages matching PATTERN"));
   i++;
 
   entries[i].num = i + 1;
@@ -3190,7 +3192,8 @@ static struct Menu *create_pattern_menu(void)
   mutt_buffer_printf(entrybuf, "~<(%s)", patternstr);
   entries[i].expr = mutt_str_dup(mutt_b2s(entrybuf));
   // L10N: Pattern Completion Menu description for ~<()
-  entries[i].descr = mutt_str_dup(_("messages whose immediate parent matches PATTERN"));
+  entries[i].descr =
+      mutt_str_dup(_("messages whose immediate parent matches PATTERN"));
   i++;
 
   entries[i].num = i + 1;
@@ -3198,7 +3201,8 @@ static struct Menu *create_pattern_menu(void)
   mutt_buffer_printf(entrybuf, "~>(%s)", patternstr);
   entries[i].expr = mutt_str_dup(mutt_b2s(entrybuf));
   // L10N: Pattern Completion Menu description for ~>()
-  entries[i].descr = mutt_str_dup(_("messages having an immediate child matching PATTERN"));
+  entries[i].descr =
+      mutt_str_dup(_("messages having an immediate child matching PATTERN"));
 
   mutt_menu_push_current(menu);
 

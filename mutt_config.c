@@ -55,7 +55,6 @@
 #include "muttlib.h"
 #include "mx.h"
 #include "pager.h"
-#include "pattern.h"
 #include "progress.h"
 #include "recvattach.h"
 #include "recvcmd.h"
@@ -67,6 +66,7 @@
 #include "bcache/lib.h"
 #include "maildir/lib.h"
 #include "ncrypt/lib.h"
+#include "pattern/lib.h"
 
 #ifndef ISPELL
 #define ISPELL "ispell"

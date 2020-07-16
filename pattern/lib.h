@@ -21,8 +21,8 @@
  * this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MUTT_PATTERN_H
-#define MUTT_PATTERN_H
+#ifndef MUTT_PATTERN_LIB_H
+#define MUTT_PATTERN_LIB_H
 
 #include "config.h"
 #include <stdbool.h>
@@ -166,4 +166,4 @@ int mutt_search_command(int cur, int op);
 
 bool mutt_limit_current_thread(struct Email *e);
 
-#endif /* MUTT_PATTERN_H */
+#endif /* MUTT_PATTERN_LIB_H */
