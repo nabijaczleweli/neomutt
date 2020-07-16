@@ -30,6 +30,7 @@
 #include "mutt/lib.h"
 #include "mutt.h"
 
+struct ConfigSet;
 struct Email;
 struct Envelope;
 struct Mailbox;
