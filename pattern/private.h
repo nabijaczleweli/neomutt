@@ -26,6 +26,9 @@
 #include "config.h"
 #include <stdbool.h>
 
+struct Buffer;
+struct Pattern;
+
 /**
  * enum PatternEat - Function to process pattern arguments
  *
@@ -54,6 +57,10 @@ struct PatternFlags
   char *desc;
 };
 
+#define EMSG(e) (((e)->msgno) + 1)
+
+#define MUTT_MAXRANGE -1
+
 extern const struct PatternFlags Flags[];
 
 extern char *C_ExternalSearchCommand;
@@ -62,5 +69,6 @@ extern bool  C_ThoroughSearch;
 
 const struct PatternFlags *lookup_op(int op);
 const struct PatternFlags *lookup_tag(char tag);
+bool eval_date_minmax(struct Pattern *pat, const char *s, struct Buffer *err);
 
 #endif /* MUTT_PATTERN_PRIVATE_H */
