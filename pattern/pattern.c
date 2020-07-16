@@ -72,9 +72,6 @@
 #include "imap/lib.h"
 #endif
 
-/* These Config Variables are only used in pattern.c */
-bool C_ThoroughSearch; ///< Config: Decode headers and messages before searching them
-
 // clang-format off
 /* The regexes in a modern format */
 #define RANGE_NUM_RX      "([[:digit:]]+|0x[[:xdigit:]]+)[MmKk]?"

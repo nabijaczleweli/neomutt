@@ -166,4 +166,6 @@ int mutt_search_command(int cur, int op);
 
 bool mutt_limit_current_thread(struct Email *e);
 
+bool config_init_pattern(struct ConfigSet *cs);
+
 #endif /* MUTT_PATTERN_LIB_H */

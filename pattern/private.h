@@ -24,6 +24,7 @@
 #define MUTT_PATTERN_PRIVATE_H
 
 #include "config.h"
+#include <stdbool.h>
 
 /**
  * enum PatternEat - Function to process pattern arguments
@@ -54,5 +55,9 @@ struct PatternFlags
 };
 
 extern const struct PatternFlags Flags[];
+
+extern char *C_ExternalSearchCommand;
+extern char *C_PatternFormat;
+extern bool  C_ThoroughSearch;
 
 #endif /* MUTT_PATTERN_PRIVATE_H */
